@@ -103,5 +103,119 @@ it('Should allow connection with client', (done) => {
             }
           });
         }, 10000);
+        it('should handle expiry time when set to -1', (done) => {
+            const randomKey = randomBytes(4).toString('hex');
+            const randomValue = randomBytes(4).toString('hex');
+        
+            client.set(randomKey, randomValue, -1, (err, result) => {
+              if (result !== undefined) {
+                expect(result).toBe(true);
+        
+                client.get(randomKey, (err, data) => {
+                  expect(data).toBe(undefined);
+                  done();
+                });
+              }
+            });
+          });
+        });
+        describe('Testing add and replace commands', () => {
+            let server: MemCachedServer;
+            let client: MemCached;
+            const host = '127.0.0.1';
+            const port = 11211;
           
-}
+            beforeAll(async () => {
+              server = new MemCachedServer(port, host);
+              await server.startServer();
+            });
+            beforeEach(() => {
+                client = new MemCached(`${host}:${port}`, { idle: 10000 });
+              });
+            
+              afterEach(() => {
+                client.end();
+              });
+            
+              afterAll(async () => {
+                await server.stopServer();
+              });
+            
+              it('should handle add command when data is not already present', (done) => {
+                const randomKey = randomBytes(4).toString('hex');
+                const randomValue = randomBytes(4).toString('hex');
+            
+                client.add(randomKey, randomValue, 0, (err, result) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                  if (result !== undefined) {
+                    expect(result).toBe(true);
+            
+                    client.get(randomKey, (err, data) => {
+                      expect(data).toBe(randomValue);
+                      done();
+                    });
+                  }
+                });
+              });
+            
+              it('should handle add command when data is already present', (done) => {
+                const randomKey = randomBytes(4).toString('hex');
+                const randomValue = randomBytes(4).toString('hex');
+            
+                // Set the data first
+                client.set(randomKey, randomValue, 0, (err, result) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                  if (result !== undefined) {
+                    expect(result).toBe(true);
+            
+                    // Check for add command
+                    client.add(randomKey, randomValue, 0, (err, result) => {
+                      expect(result).toBe(false);
+                      done();
+                    });
+                  }
+                });
+              });
+              it('should handle replace command when data is already present', (done) => {
+                const randomKey = randomBytes(4).toString('hex');
+                const randomValue = randomBytes(4).toString('hex');
+            
+                // Set a data first
+                client.set(randomKey, randomValue, 0, (err, result) => {
+                  if (result !== undefined) {
+                    expect(result).toBe(true);
+            
+                    // Call the replace function with the same key and new value
+                    const newRandomValue = randomBytes(4).toString('hex');
+                    client.replace(randomKey, newRandomValue, 0, (err, result) => {
+                      expect(result).toBe(true);
+            
+                      // Cross check the new value
+                      client.get(randomKey, (err, data) => {
+                        expect(data).toBe(newRandomValue);
+                        done();
+                      });
+                    });
+                  }
+                });
+              }, 10000);
+              it('should handle replace command when data is not already present', (done) => {
+                const randomKey = randomBytes(4).toString('hex');
+                const randomValue = randomBytes(4).toString('hex');
+            
+                client.replace(randomKey, randomValue, 0, (err, result) => {
+                  if (err) {
+                    console.error(err);
+                  }
+                  if (result !== undefined) {
+                    expect(result).toBe(false);
+                    done();
+                  }
+                });
+              });
+            });            
+            
