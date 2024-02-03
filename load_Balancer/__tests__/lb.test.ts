@@ -131,4 +131,19 @@ describe('Multiple Servers Round Robin - Parallel GET /', () => {
         });
       });
     });
-    
+    describe('No server is alive - GET /', () => {
+        let lbServer: ILBServer;
+      
+        beforeAll(async () => {
+          lbServer = new LBServer(80, SchedulingAlgorithm.ROUND_ROBIN, 10);
+          await lbServer.performHealthCheck();
+        });
+      
+        test('Responds with 500 status code', (done) => {
+            request(lbServer.getServer()).get('/').expect(500, done);
+          });
+        
+          afterAll(() => {
+            lbServer.close();
+          });
+        });      
