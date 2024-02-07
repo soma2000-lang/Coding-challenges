@@ -56,7 +56,7 @@ export default class Topic {
    * @returns {Promise<void>}
    */
 
-
+//this will input the prefix and will output the Buffer
   async publish(pubArg: PubArg): Promise<void> {
     const promises: Promise<void>[] = [];
     // the buffer will be 
@@ -65,3 +65,39 @@ export default class Topic {
       Buffer.from(this.subject + ' ')
     ]);
   }
+  // This is same for all the messages during this publish call.
+  let suffix:Buffer;
+   if(PubArg.Payload)
+
+  // what were there
+  let suffix: Buffer;
+  if (pubArg.payload) {
+    suffix = Buffer.concat([
+      Buffer.from(pubArg.payloadSize.toString(10) + '\r\n'),
+      pubArg.payload,
+      Buffer.from('\r\n')
+    ]);
+  } else {
+    suffix = Buffer.from('0\r\n\r\n');
+  }
+  this.subscriptions.forEach((subscription) => {
+    promises.push(
+      new Promise<void>((res) => {
+        // Prepare final message
+        const buffer = Buffer.concat([
+          prefix,
+          Buffer.from(subscription.sid.toString(10) + ' '),
+          suffix
+        ]);
+
+        // Send the message and complete the promise
+        subscription.client.socket.write(buffer);
+        res();
+      })
+    );
+  });
+  await Promise.all(promises);
+}
+}
+
+
