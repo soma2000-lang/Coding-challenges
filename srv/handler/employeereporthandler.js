@@ -10,134 +10,151 @@ log.setLoggingLevel("info");
     sfecfo = await cds.connect.to("FoundationPlatformPLT");
     sfecci = await cds.connect.to('ECCompensationInformation');
   })();
-  const user = ['103092'];
-  let EmpInfo;                                           
-  const getUsers = async (req) => {                       
-    const txei = sfecei.transaction(req);                   
-    const query = SELECT.from("EmpJob", ["userId","jobTitle","employmentNav","workLocation","startDate","standardHours","location","managerId","fte","endDate","division","employeeClass"]).where(`managerId IN`, user)
-    EmpInfo = await txei.send({ method: "READ", query });
-    console.log('Employees', EmpInfo);
-    return EmpInfo;
-  }
-
-  const getUserid = async (req) => {               
-    const txei = sfecei.transaction(req);
-    const query = SELECT.from("EmpJob", ["userId"]).where(`managerId IN`, user)
-    EmpInfo = await txei.send({ method: "READ", query });
-    console.log(EmpInfo);
-    return EmpInfo;
-  }
 
 
-  const usersReport = async (req) => {                                      
-    await getUsers(req);   
-    let userre=[] ;                                                  
-    const txecto = sfecus.transaction(req);
-    let flattenedData = [];
-    if (EmpInfo) {
-      const usersArray = EmpInfo.map(obj => obj.userId);                     
-      console.log(usersArray);
-      const query = SELECT.from("User", ["defaultFullName","department","email","empId","gender","jobCode","salary","userId","manager","homePhone","businessPhone","addressLine1"])
-        .where(`userId IN`, usersArray);
-        userre = await txecto.send({ method: "READ", query });
-        if (Array.isArray(userre) && userre.length) {
-          userre.forEach((item) => {
-              flattenedData.push({
-                userId: item.userId,
-                defaultFullName: item.defaultFullName,
-                department:item.department,
-                email:item.email,
-                empId:item.empId,
-                gender:item.gender,
-                jobCode:item.jobCode,
-                salary:item.salary,
-                userId:item.userId,
-                manager:item.manager,
-                homePhone:item.homePhone,
-                businessPhone:item.businessPhone,
-                addressLine1:item.addressLine1
-              });
-            });
-    
-
-    
-          return userre;
-            }
-        
-      }
-    }
-
-
-const fetchSalary = async (req) => {                                      
-  await getUsers(req);                                                          
-  const txecti = sfecci.transaction(req);
-  let sal=[];
-  let Data = [];
-  if (EmpInfo) {
-    const usersArray = EmpInfo.map(obj => obj.userId);                     
-    console.log(usersArray);
-    const query = SELECT.from("EmpCompensation", ["payGrade","payGroup","payrollSystemId",
-    "userId","benefitsRate"]).where(`userId IN`, usersArray);
-    sal = await txecti.send({ method: "READ", query });
-    if (Array.isArray(sal) && sal.length) {
-      sal.forEach((item) => {
-        Data.push({
-          userId: item.userId,
-          payGrade:item.payGrade,
-          payGroup:item.payGroup,
-          payrollSystemId:item.payrollSystemId,
-          benefitsRate:item.benefitsRate
-          
-        });
-      });
-
-
-
-      }
-    return sal;
-  }
-}
-
-const fetchPhoto = async (req) => {
-  try {
-    await getUsers(req);
-
-    const txei = sfecfo.transaction(req);
-    console.log(EmpInfo);
-    if (EmpInfo) {
-      const usersArray = EmpInfo.map(obj => obj.userId);
-      console.log(usersArray);
-      let userPhoto = [];
-      const query = SELECT.from("Photo", ["photo", "userId"]).where(`userId IN`, usersArray);
-      userPhoto = await txei.send({ method: "READ", query });
-      if (Array.isArray(userPhoto) && userPhoto.length) {
-        for (const user of usersArray) {
-          userPhoto.map((image) => {
-            if (user.userId == image?.userId) {
+  const Employeedetails = async (req) => {
+    try {
+      console.log('running');
+      var [usersPhoto,empJob,EmpComp,perPersonal] = await Promise.all([fetchProfilePhoto(req),fetchEmpJob(req),
+        fetchcompensation(req),
+        fetchPerPersonal(req)]);
+      if (Array.isArray(usersPhoto) && usersPhoto.length) {
+          usersPhoto.map((image) => {
               image.photo = image.photo ? ("data:image/jpeg;base64," + image.photo.replaceAll("\r\n", "")) : "";
-              user.photo = image;
-            }
-          })
-        }
+            })
       }
-
-      return EmpInfo;
-
+      return  {"perPersonal": perPersonal,   
+      "EmpComp": EmpComp,
+      "usersPhoto": usersPhoto,
+      "empJob" : empJob
     }
-  } catch (oErr) {
-    req.reject(oErr);
-  }
-}
+    } catch (oErr) {
+      req.reject(oErr);
+    }
+  };
 
-
+  const fetchPerPersonal = async (req) => {
+    try {
+      const { userId } = req.data;
+      const txecei = sfecus.transaction(req);
+      const query = [SELECT.from("perPersonal", (person) => {
+        person.defaultFullName,
+        person.department,
+        person.email,
+        person.empId,
+        person.gender,
+        person.jobCode,
+        person.salary,
+        person.userId,
+        person.manager,
+        person.homePhone,
+        person.businessPhone,
+        person.addressLine1
+        
+      }).where(`userId IN`,userId)];
+      const [perPersonal] = await txecei.send({ method: "GET", query });
+      
+      if (Array.isArray(perPersonal) && perPersonal.length) {
+        return perPersonal[0]
+      } else {
+        log.info(`Cloudn't find any pending records`);
+        return {
+          "Name": "",
+        };
+      }
+    }
+    catch (oErr) {
+      req.reject(oErr);
+    }
+  };
+  
+  
+  
+  
+ 
+  
+  const fetchcompensation = async (req) => {
+    try {
+      const { userId } = req.data;
+      const txecti = sfecci.transaction(req);
+      const query = [SELECT.from("EmpComp", (person) => {
+        person.payGrade, person.payGroup, person.payrollSystemId,person.userId,person.benefitsRate
+      }).where(`userId IN`,userId)]
+       
+  
+      const [EmpComp]= await txecti.send({ method: "GET", query });
+  
+      if (Array.isArray(EmpComp) && EmpComp.length) {
+        return EmpComp[0]
+      } else {
+        log.info(`Cloudn't find any pending records`);
+        return {
+          "employeecompensation": ""
+        };
+      }
+    }
+    catch (oErr) {
+      req.reject(oErr);
+    }
+  };
+  
+  const fetchEmpJob = async (req) => {
+    try {
+      const { userId } = req.data;
+      const txecfp = sfecei.transaction(req);
+      const query = [SELECT.from("empJob", (emp) => {
+        emp.userId,
+        emp.jobTitle,
+        emp.workLocation,
+        emp.startDate,
+        emp.standardHours,
+        emp.location,
+        emp.managerId,
+        emp.fte,
+        emp.endDate,
+        emp.division,
+        emp.employeeClass
+        
+        }).where(`userId IN`,userId )];
+  
+      const [empJob] = await txecfp.send({ method: "GET", query });
+  
+      if (Array.isArray(empJob) && empJob.length) {
+        return empJob[0]
+      } else {
+        log.info(`Cloudn't find any pending records`);
+        return {
+          "jobTitle": ""
+        };
+      }
+    }
+    catch (oErr) {
+      req.reject(oErr);
+    }
+  };
+  
+  
+  const fetchProfilePhoto = async (req) => {
+    try {
+      const { userId } = req.data;
+      const txecfp = sfecfo.transaction(req);
+      const query = SELECT.from("usersPhoto", ["photo", "userId"])
+          .where(`userId IN`, userId);
+      const [usersPhoto] = await txecfp.send({ method: "READ", query });
+      return usersPhoto;
+    } catch (oErr) {
+      req.error({
+        code: 500,
+        message: oErr,
+        target: oErr,
+        status: 500,
+      });
+    }
+  };
 
  
   module.exports = {
-    getUsers,
-    getUserid,
-    usersReport,
-    fetchSalary,
-    fetchPhoto 
+    Employeedetails,fetchProfilePhoto,fetchPerPersonal,fetchEmpJob,fetchcompensation 
   }
 
 

@@ -5,15 +5,15 @@ class EmployeeService extends cds.ApplicationService {
 
     
     init() {
-       this.on(["READ"], "User", employeereporthandler.usersReport);
+       this.on(["READ"], "User", employeereporthandler.fetchPerPersonal);
        
-        this.on('userpersonalinfo', employeereporthandler.usersReport);
-        this.on('usersPhoto', employeereporthandler.fetchPhoto);
-        this.on('userjobinfo', employeereporthandler.getUsers);
-        // this.on(["READ"], "EmpJob", employeereporthandler.getUsers);
-        // this.on(["READ"], "Photo", employeereporthandler.fetchPhoto);
-        this.on('compensationinfo', employeereporthandler.fetchSalary);
-       // this.on(["READ"], "EmpCompensation", employeereporthandler.fetchSalary);
+        // this.on('userpersonalinfo', employeereporthandler.fetchPerPersonal);
+        // this.on('usersPhoto', employeereporthandler.fetchProfilePhoto);
+        // this.on('usersPhoto', employeereporthandler.Employeedetails);
+        // this.on('userjobinfo', employeereporthandler.fetchEmpJob);
+        this.on('fetchEmpDetails',employeereporthandler.Employeedetails);
+     
+     
         return super.init();
     }
 }

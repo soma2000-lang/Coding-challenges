@@ -10,7 +10,7 @@ service EmployeeService  {
        userId,
         photo
     };
-    function usersPhoto(userId : String)   returns array of {                                               
+    type usersPhoto{                              
         userId : String;
         photo : String;
     };
@@ -18,7 +18,7 @@ service EmployeeService  {
     // projection on ECEmploymentInformation.EmpJob {
     //   *
     // };
-    function userjobinfo(userId : String) returns{
+    type userjobinfo{
     
         userId : String;
         jobTitle  : String;
@@ -39,7 +39,7 @@ service EmployeeService  {
     //   division,
     //   email,empId,gender,jobCode,salary,userId,manager
     };
-    function userpersonalinfo(userId : String) returns array of {
+    type userpersonalinfo {
     
         defaultFullName: String;
         department: String;
@@ -60,14 +60,19 @@ service EmployeeService  {
       *
     };
     
-    function compensationinfo(userId : String) returns array of {
+    type compensationinfo{
         payGrade: String;
         payGroup: String;
         payrollSystemId: String;
         userId: String;
         benefitsRate: String;
     };
-
+   function fetchEmpDetails(userId : String) returns {
+     perPersonal:  userpersonalinfo;
+      EmpComp: compensationinfo;
+      usersPhoto: usersPhoto;
+      empJob : userjobinfo
+    }; 
     
 
    
