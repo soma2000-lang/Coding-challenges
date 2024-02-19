@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prepare": "husky install",
+    "create-hook": "husky add .husky/pre-commit \"npm test\"",
     "start": "next start",
     "lint": "next lint"
   },
