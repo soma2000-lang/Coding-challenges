@@ -6,17 +6,22 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@sap-cloud-sdk/connectivity": "^2.8.0",
     "@sap-cloud-sdk/http-client": "^3.12.0",
     "@sap-cloud-sdk/resilience": "^3.12.0",
     "@sap/cds": "^7",
     "@sap/cds-odata-v2-adapter-proxy": "^1.9.21",
+    "@sap/jobs-client": "^1.7.43",
     "@sap/logging": "^7.1.0",
     "@sap/node-jwt": "^1.6.22",
+    "@sap/ux-ui5-tooling": "^1.12.4",
     "@sap/xsenv": "^4.2.0",
     "@sap/xssec": "^3",
     "cf-nodejs-logging-support": "7.2.1",
+    "cfenv": "^1",
     "express": "^4",
-    "passport": "^0"
+    "passport": "^0",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^1",
@@ -32,15 +37,38 @@
     "deploy": "cf deploy mta_archives/archive.mtar --retries 1"
   },
   "cds": {
+    "build": {
+      "target": "gen",
+      "tasks": [
+        {
+          "for": "node-cf",
+          "src": "srv",
+          "options": {
+            "model": [
+              "app",
+              "srv"
+            ]
+          }
+        }
+      ]
+    },
     "requires": {
-      "[development]": {
-        "strategy": "mock",
-        "users": {
-          "108743": {
-            "roles": [
-              "authenticated-user"
-            ],
-            "tenant": "t1"
+      "uaa": {
+        "kind": "xsuaa"
+      },
+      "auth": {
+        "[production]": {
+          "strategy": "JWT"
+        },
+        "[development]": {
+          "strategy": "mock",
+          "users": {
+            "108743": {
+              "roles": [
+                "authenticated-user"
+              ],
+              "tenant": "t1"
+            }
           }
         }
       },
@@ -48,73 +76,49 @@
         "kind": "odata-v2",
         "model": "srv/external/ECCompensationInformation",
         "credentials": {
-          "[production]": {
-            "destination": "extensionapplication-sf-api",
-            "path": "/odata/v2"
-          },
-          "[development]": {
-            "url": "",
-            "authentication": "BasicAuthentication",
-            "username": "",
-            "password": "",
-            "path": "/odata/v2"
-          }
+          "url": "",
+          "authentication": "BasicAuthentication",
+          "username": "",
+          "password": "",
+          "path": "/odata/v2"
         }
       },
       "PLTUserManagement": {
         "kind": "odata-v2",
         "model": "srv/external/PLTUserManagement",
         "credentials": {
-          "[production]": {
-            "destination": "extensionapplication-sf-api",
-            "path": "/odata/v2"
-          },
-          "[development]": {
-            "url": "",
-            "authentication": "BasicAuthentication",
-            "username": "",
-            "password": "",
-            "path": "/odata/v2"
-          }
+          "url": "",
+          "authentication": "BasicAuthentication",
+          "username": "",
+          "password": "",
+          "path": "/odata/v2"
         }
       },
       "ECEmploymentInformation": {
         "kind": "odata-v2",
         "model": "srv/external/ECEmploymentInformation",
         "credentials": {
-          "[production]": {
-            "destination": "extensionapplication-sf-api",
-            "path": "/odata/v2"
-          },
-          "[development]": {
-            "url": "",
-            "authentication": "BasicAuthentication",
-            "username": "",
-            "password": "",
-            "path": "/odata/v2"
-          }
+          "url": "https://api68sales.successfactors.com",
+          "authentication": "BasicAuthentication",
+          "username": "",
+          "password": "",
+          "path": "/odata/v2"
         }
       },
       "FoundationPlatformPLT": {
         "kind": "odata-v2",
         "model": "srv/external/FoundationPlatformPLT",
         "credentials": {
-          "[production]": {
-            "destination": "extensionapplication-sf-api",
-            "path": "/odata/v2"
-          },
-          "[development]": {
-            "url": "",
-            "authentication": "BasicAuthentication",
-            "username": "",
-            "password": "",
-            "path": "/odata/v2"
-          }
+          "url": "",
+          "authentication": "BasicAuthentication",
+          "username": "",
+          "password": "",
+          "path": "/odata/v2"
         }
-      },
-      "[production]": {
-        "auth": "xsuaa"
       }
     }
-  }
+  },
+  "sapux": [
+    "app/employeeprofile"
+  ]
 }

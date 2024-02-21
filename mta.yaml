@@ -1,4 +1,4 @@
-_schema-version: "3.1"
+_schema-version: "3.2"
 ID: Report
 description: A simple CAP project.
 version: 1.0.0
@@ -7,22 +7,24 @@ modules:
     type: nodejs
     path: gen/srv
     requires:
-    - name: Report-auth
-    - name: Report-destination-service
-    - name: Report-db
+      - name: Report-auth
+      - name: Report-destination-service
+      - name: Report-logging
     provides:
       - name: srv-api
         properties:
           srv-url: ${default-url}
     parameters:
       buildpack: nodejs_buildpack
+      disk-quota: 1024M
+      memory: 512M
     build-parameters:
       builder: npm
       ignore:
-      - default-*.json
-      - .env
-      - '*node_modules*'
-      - package-lock.json
+        - default-*.json
+        - .env
+        - "*node_modules*"
+        - package-lock.json
   - name: Report-app-content
     type: com.sap.application.content
     path: .
@@ -31,13 +33,50 @@ modules:
         parameters:
           content-target: true
     build-parameters:
-      build-result: resources
+      build-result: gen/app
       requires:
         - artifacts:
             - employeeprofile.zip
           name: employeeprofile
           target-path: gen/app
-
+  - name: Report-dest-content
+    type: com.sap.application.content
+    requires:
+      - name: Report-auth
+        parameters:
+          service-key:
+            name: Report-auth-sk
+      - name: Report-destination-service
+        parameters:
+          content-target: true
+      - name: Report-repo-host
+        parameters:
+          service-key:
+            name: Report-repo-host-sk
+      - name: srv-api
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Authentication: OAuth2UserTokenExchange
+              Name: Report-service-Report-auth
+              ServiceInstanceName: Report-auth
+              ServiceKeyName: Report-auth-sk
+              sap.cloud.service: Report-service
+            - Name: Report-service-Report-repo-host
+              ServiceInstanceName: Report-repo-host
+              ServiceKeyName: Report-repo-host-sk
+              sap.cloud.service: Report-service
+            - Authentication: OAuth2UserTokenExchange
+              Description: App - Server Module
+              Name: Report-srv
+              TokenServiceInstanceName: Report-auth
+              TokenServiceKeyName: Report-auth-sk
+              URL: ~{srv-api/srv-url}
+              sap.cloud.service: Report-service
+          existing_destinations_policy: ignore
+    build-parameters:
+      no-source: true
   - name: employeeprofile
     type: html5
     path: app/employeeprofile
@@ -47,47 +86,44 @@ modules:
       commands:
         - npm install
         - npm run build:cf
-      supported-platforms:
-        []
+      supported-platforms: []
 resources:
+  - name: Report-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      path: ./xs-security.json
+      service: xsuaa
+      service-plan: application
   - name: Report-repo-host
     type: org.cloudfoundry.managed-service
     parameters:
       service: html5-apps-repo
-      service-name: Report-html5-srv
       service-plan: app-host
   - name: Report-destination-service
     type: org.cloudfoundry.managed-service
     parameters:
       config:
-        HTML5Runtime_enabled: false
+        HTML5Runtime_enabled: true
         init_data:
           instance:
             destinations:
               - Authentication: NoAuthentication
+                Description: SAPUI5
                 Name: ui5
                 ProxyType: Internet
                 Type: HTTP
                 URL: https://ui5.sap.com
             existing_destinations_policy: update
-        version: 1.0.0
       service: destination
       service-name: Report-destination-service
       service-plan: lite
-  - name: Report-auth
+    requires:
+      - name: srv-api
+  - name: Report-logging
     type: org.cloudfoundry.managed-service
     parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
-      config:
-        xsappname: Report-${org}-${space}
-        tenant-mode: dedicated
-  - name: Report-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared
+      service: application-logs
+      service-plan: lite
 parameters:
   deploy_mode: html5-repo
   enable-parallel-deployments: true

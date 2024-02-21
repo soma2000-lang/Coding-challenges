@@ -16,7 +16,7 @@
     const getemployee = async (req) => {
       try {
        // console.log("running");
-        const managerId = req.user.id;
+        const managerId = '108743';
         //console.log(managerId);
         const txecei =  sfecei.transaction(req);
         let usersInfo = await txecei.get(
