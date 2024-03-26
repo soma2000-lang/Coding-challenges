@@ -54,7 +54,9 @@ function PlaylistEntry(obj: SimplifiedPlaylist) {
             loading='lazy'
           />
         )}
-        <div className='flex flex-col gap-1'>
+        
+        
+        
           <p className='tex-sm font-medium'>{obj.name}</p>
           <p className='text-xs font-medium'>
             Playlist • {obj.tracks?.total} songs
