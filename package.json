@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "chai-http": "^5.0.0",
-    "config": "^3.3.12",
-    "save-dev": "^0.0.1-security",
-    "sinon": "^18.0.0"
-  }
-}
